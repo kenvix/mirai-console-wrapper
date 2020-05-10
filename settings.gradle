@@ -1,0 +1,4 @@
+rootProject.name = 'mirai-console'
+
+include(':mirai-console-wrapper')
+enableFeaturePreview('GRADLE_METADATA')
