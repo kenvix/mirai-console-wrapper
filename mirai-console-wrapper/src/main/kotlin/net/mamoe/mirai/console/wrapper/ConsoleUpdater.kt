@@ -165,7 +165,6 @@ internal fun String.calculateVersionWeight(): Long {
         if (it.size == 2) it + "0"
         else it
     }.reversed().foldIndexed(0) { index: Int, acc: Long, s: String ->
-        println(s)
         acc + (10000.0.pow(index) * (1 + s.convertPatchVersionToWeight().toDouble())).toLong()
     }
 }
@@ -183,7 +182,7 @@ internal fun String.convertPatchVersionToWeight(): Number {
 
     return if (this.contains("RC")) {
         versions[0].toDoubleOrZero() + 0.1 * versions[1].toDoubleOrZero() + 0.01 * versions[2].toDoubleOrZero() + 0.01
-    } else {
+    } else { // EA
         0.001 * versions[0].toDoubleOrZero() + 0.0001 * versions[1].toDoubleOrZero() + 0.00001 * versions[2].toDoubleOrZero()
     }
 }
