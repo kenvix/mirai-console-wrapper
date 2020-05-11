@@ -156,17 +156,36 @@ internal fun List<String>.latestVersion(): String {
 
 internal fun List<String>.sortByVersion(): List<String> {
     return sortedByDescending { version ->
-        version.split('.').let {
-            if (it.size == 2) it + "0"
-            else it
-        }.reversed().foldIndexed(0.0) { index: Int, acc: Double, s: String ->
-            acc + 1000.0.pow(index) * s.convertPatchVersionToWeight()
-        }
+        version.calculateVersionWeight()
     }
 }
 
-internal fun String.convertPatchVersionToWeight(): Double {
-    return this.split('-').reversed().foldIndexed(0.0) { index: Int, acc: Double, s: String ->
-        acc + 10.0.pow(index) * (s.toIntOrNull()?.toDouble() ?: -0.5)
+internal fun String.calculateVersionWeight(): Long {
+    return split('.').let {
+        if (it.size == 2) it + "0"
+        else it
+    }.reversed().foldIndexed(0) { index: Int, acc: Long, s: String ->
+        println(s)
+        acc + (10000.0.pow(index) * (1 + s.convertPatchVersionToWeight().toDouble())).toLong()
     }
 }
+
+internal fun String.convertPatchVersionToWeight(): Number {
+    this.toIntOrNull()?.let { return 1 + it.toDouble() }
+    val versions = this.split('-').let {
+        when (it.size) {
+            2 -> it + "0"
+            1 -> it + "0" + "0"
+            0 -> listOf("0", "0", "0")
+            else -> it
+        }
+    }
+
+    return if (this.contains("RC")) {
+        versions[0].toDoubleOrZero() + 0.1 * versions[1].toDoubleOrZero() + 0.01 * versions[2].toDoubleOrZero() + 0.01
+    } else {
+        0.001 * versions[0].toDoubleOrZero() + 0.0001 * versions[1].toDoubleOrZero() + 0.00001 * versions[2].toDoubleOrZero()
+    }
+}
+
+internal fun String.toDoubleOrZero(): Double = this.trim { it in 'a'..'z' || it in 'A'..'Z' }.toDoubleOrNull() ?: 0.0

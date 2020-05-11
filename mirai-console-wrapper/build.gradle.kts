@@ -35,6 +35,10 @@ dependencies {
     api(ktor("network", Versions.Kotlin.ktor))
 
     api("com.github.ajalt:clikt:2.6.0")
+    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit5"))
+
+    // implementation(kotlin("script-runtime"))
 }
 
 version = Versions.Mirai.consoleWrapper

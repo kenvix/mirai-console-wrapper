@@ -9,6 +9,11 @@ internal class ConsoleUpdaterKtTest {
         assertEquals(
                 listOf(
                         "1.0.0",
+                        "1.0-RC3",
+                        "1.0-RC-2",
+                        "1.0-RC2",
+                        "1.0-RC",
+                        "1.0-EA2",
                         "1.0-EA-2",
                         "1.0-EA",
                         "0.40.0"
@@ -16,8 +21,13 @@ internal class ConsoleUpdaterKtTest {
                 listOf(
                         "1.0.0",
                         "0.40.0",
+                        "1.0-EA-2",
                         "1.0-EA",
-                        "1.0-EA-2"
+                        "1.0-EA2",
+                        "1.0-RC",
+                        "1.0-RC2",
+                        "1.0-RC-2",
+                        "1.0-RC3"
                 ).sortByVersion()
         )
     }
