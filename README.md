@@ -17,3 +17,21 @@
                                  
 -h, --help                       显示这个帮助
 ```
+
+### 使用Docker
+
+``` bash
+docker build . -t mirai
+# 构建镜像
+
+docker run -it --rm \
+    -v $PWD/data:/app/data
+    -p 8080:8080 # 如果你需要使用mirai-api-http，请开启端口
+    mirai
+# 启动mirai-console-wrapper
+
+# 如果你需要使用插件，将你所需要使用的插件放在 data/plugins/ 下, e.g
+cd $PWD/data/plugins
+curl -LO \
+    https://github.com/ryoii/mirai-console-addition/releases/download/v0.2.3/mirai-console-addition-V0.2.3.jar
+```
