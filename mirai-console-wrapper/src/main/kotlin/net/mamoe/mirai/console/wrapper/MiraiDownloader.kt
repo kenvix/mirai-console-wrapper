@@ -18,6 +18,19 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class FilePath(delegate: List<Pair<String, String>>) : List<Pair<String, String>> by delegate
 
+suspend fun getFilePaths(module: String, version: String): FilePath {
+    return FilePath(listOfNotNull(
+            if (WrapperCli.source != "DEFAULT") {
+                "custom" to WrapperCli.source.replace("{module}", module).replace("{version}", version)
+            } else null,
+            if (isCuiCloudAvailable())
+                "崔云国内镜像" to "https://pan.jasonczc.cn/?/mirai/$module/$module-$version.mp4"
+            else null,
+            "GitHub mamoe.github.io" to "https://mamoe.github.io/mirai-repo/shadow/$module/$module-$version.jar",
+            "GitHub mirai-repo" to "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/$module/$module-$version.jar"
+    ))
+}
+
 internal object MiraiDownloader {
     suspend fun download(from: FilePath, to: File) {
         from.forEach {

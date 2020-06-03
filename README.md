@@ -16,9 +16,16 @@
                                  "TERMINAL" 为 Unix 终端界面; "PURE" (默认) 为纯命令行.
                                  
 --proxy [URL]                    HTTP 代理地址. 不提供时自动从 127.0.0.1:1080 和 127.0.0.1:1088 检测 SS 代理.
+
+--source [URL]                   版本更新源. 需要支持 miria-core-qqandroid 和 mirai-console 后端和前端等相关 jar 包的下载. 
+                                 URL 中 {module} 将会被替换为模块名, 如 mirai-core, mirai-console-pure, mirai-console;
+                                 {version} 将会被替换为版本号, 如 1.0-RC2.
+                                 
                                  
 -h, --help                       显示这个帮助
 ```
+
+这些参数都可以通过环境变量 `mirai.wrapper.*` 设置. 如 `mirai.wrapper.proxy`, `mirai.wrapper.update`
 
 ### 使用Docker
 

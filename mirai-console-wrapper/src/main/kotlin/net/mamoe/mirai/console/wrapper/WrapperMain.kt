@@ -79,6 +79,15 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
             envvar = "mirai.wrapper.proxy"
     ).default("DEFAULT")
 
+    val source: String by option(
+            help = """
+                版本更新源. 需要支持 miria-core-qqandroid 和 mirai-console 后端和前端等相关 jar 包的下载. 
+                URL 中 {module} 将会被替换为模块名, 如 mirai-core;
+                {version} 将会被替换为版本号, 如 1.0-RC2.
+            """.trimIndent(),
+            envvar = "mirai.wrapper.source"
+    ).default("DEFAULT")
+
     override fun run() {
         proxyAvailabilityJob // start
         CoreUpdater // start

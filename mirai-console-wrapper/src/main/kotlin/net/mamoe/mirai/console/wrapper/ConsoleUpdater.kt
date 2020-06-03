@@ -88,13 +88,7 @@ internal object ConsoleUpdater {
             )
              */
             MiraiDownloader.download(
-                    FilePath(listOfNotNull(
-                            if (isCuiCloudAvailable())
-                                "崔云国内镜像" to "https://pan.jasonczc.cn/?/mirai/${getProjectName()}/${getProjectName()}-$newest.mp4"
-                            else null,
-                            "GitHub mamoe.github.io" to "https://mamoe.github.io/mirai-repo/shadow/${getProjectName()}/${getProjectName()}-$newest.jar",
-                            "GitHub mirai-repo" to "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/${getProjectName()}/${getProjectName()}-$newest.jar"
-                    )),
+                    getFilePaths(getProjectName(), newest),
                     getContent("${getProjectName()}-$newest.jar")
             )
         }

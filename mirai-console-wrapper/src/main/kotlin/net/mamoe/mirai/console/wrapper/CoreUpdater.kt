@@ -57,13 +57,7 @@ internal object CoreUpdater {
             this.getProtocolLib()?.delete()
             MiraiDownloader
                     .download(
-                            FilePath(listOfNotNull(
-                                    if (isCuiCloudAvailable())
-                                        "崔云国内镜像" to "https://pan.jasonczc.cn/?/mirai/mirai-core-qqandroid/mirai-core-qqandroid-$newest.mp4"
-                                    else null,
-                                    "GitHub mamoe.github.io" to "https://mamoe.github.io/mirai-repo/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar",
-                                    "GitHub mirai-repo" to "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar"
-                            )),
+                            getFilePaths("mirai-core-qqandroid", newest),
                             getContent("mirai-core-qqandroid-$newest.jar")
                     )
             //.addTask("https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar", getContent("mirai-core-qqandroid-jvm-$newest.jar"))
