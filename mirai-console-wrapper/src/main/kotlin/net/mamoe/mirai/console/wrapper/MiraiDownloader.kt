@@ -8,6 +8,7 @@
  */
 package net.mamoe.mirai.console.wrapper
 
+import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
@@ -49,6 +50,7 @@ class DownloadTask(
         val toFile: File
 )
 
+@OptIn(KtorExperimentalAPI::class)
 suspend fun download(
         task: DownloadTask,
         bar: MiraiDownloadProgressBar
@@ -66,7 +68,8 @@ suspend fun download(
     }
 
     withContext(Dispatchers.IO) {
-        val con = URL(task.fromUrl).openConnection() as HttpURLConnection
+        val con = if (Http.engineConfig.proxy != null) URL(task.fromUrl).openConnection(Http.engineConfig.proxy) else URL(task.fromUrl).openConnection()
+        con as HttpURLConnection
         val input = con.inputStream
         totalSize.addAndGet(con.contentLength)
         val outputStream = FileOutputStream(task.toFile)

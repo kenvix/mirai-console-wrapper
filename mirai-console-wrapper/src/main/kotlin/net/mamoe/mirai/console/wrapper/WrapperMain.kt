@@ -72,7 +72,15 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
             envvar = "mirai.wrapper.console"
     ).enum<ConsoleType>().default(ConsoleType.Pure)
 
+    val proxy: String by option(
+            help = """
+                HTTP 代理地址. 不提供时自动从 http://127.0.0.1:1080 和 http://127.0.0.1:1088 检测 SS 代理.
+            """.trimIndent(),
+            envvar = "mirai.wrapper.proxy"
+    ).default("DEFAULT")
+
     override fun run() {
+        proxyAvailabilityJob // start
 
         if (native) {
             UIMode = true

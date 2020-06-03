@@ -15,6 +15,8 @@
                                  UI 类型. "GRAPHICAL" 为 JavaFX 图形界面;
                                  "TERMINAL" 为 Unix 终端界面; "PURE" (默认) 为纯命令行.
                                  
+--proxy [URL]                    HTTP 代理地址. 不提供时自动从 127.0.0.1:1080 和 127.0.0.1:1088 检测 SS 代理.
+                                 
 -h, --help                       显示这个帮助
 ```
 
