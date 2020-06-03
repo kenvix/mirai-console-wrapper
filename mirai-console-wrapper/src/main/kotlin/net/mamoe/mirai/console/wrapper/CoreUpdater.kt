@@ -11,9 +11,25 @@
 
 package net.mamoe.mirai.console.wrapper
 
+import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.isSuccess
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import java.io.File
 
+private val cuiCloudAvailabilityJob = GlobalScope.async {
+    kotlin.runCatching {
+        Http.get<HttpStatusCode>("https://pan.jasonczc.cn").isSuccess()
+    }.getOrElse { false }
+}
+
+suspend fun isCuiCloudAvailable() = cuiCloudAvailabilityJob.await()
+
 internal object CoreUpdater {
+    init {
+        cuiCloudAvailabilityJob // init
+    }
 
     fun getProtocolLib(): File? {
         contentPath.listFiles()?.forEach { file ->
@@ -34,14 +50,21 @@ internal object CoreUpdater {
         }
 
         val newest = getNewestVersion(strategy, "net/mamoe/mirai-core-qqandroid/")
+        println()
         println("Local Core Version: $current | Newest $strategy Core Version: $newest")
         if (current != newest) {
             println("Updating shadowed-core from V$current -> V$newest")
             this.getProtocolLib()?.delete()
             MiraiDownloader
-                    .addTask(
-                            "https://pan.jasonczc.cn/?/mirai/mirai-core-qqandroid/mirai-core-qqandroid-$newest.mp4",
-                            getContent("mirai-core-qqandroid-jvm-$newest.jar")
+                    .download(
+                            FilePath(listOfNotNull(
+                                    if (isCuiCloudAvailable())
+                                        "崔云国内镜像" to "https://pan.jasonczc.cn/?/mirai/mirai-core-qqandroid/mirai-core-qqandroid-$newest.mp4"
+                                    else null,
+                                    "GitHub mamoe.github.io" to "https://mamoe.github.io/mirai-repo/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar",
+                                    "GitHub mirai-repo" to "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar"
+                            )),
+                            getContent("mirai-core-qqandroid-$newest.jar")
                     )
             //.addTask("https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/mirai-core-qqandroid/mirai-core-qqandroid-$newest.jar", getContent("mirai-core-qqandroid-jvm-$newest.jar"))
         }
@@ -53,7 +76,7 @@ internal object CoreUpdater {
      */
     fun getCurrentVersion(): String {
         val file = getProtocolLib() ?: return "0.0.0"
-        return file.name.substringBefore(".jar").substringAfter("mirai-core-qqandroid-jvm-")
+        return file.name.substringBefore(".jar").substringAfter("mirai-core-qqandroid-").substringAfter("jvm-")
     }
 
 

@@ -75,6 +75,7 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
     override fun run() {
 
         if (native) {
+            UIMode = true
             val f = JFrame("Mirai-Console Version Check")
             f.setSize(500, 200)
             f.setLocationRelativeTo(null)
@@ -112,9 +113,6 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
             }
             WrapperMain.uiLog("版本检查完成, 启动中\n")
 
-            runBlocking {
-                MiraiDownloader.downloadIfNeed(true)
-            }
             GlobalScope.launch {
                 delay(3000)
                 uiOpen = false
@@ -140,6 +138,9 @@ enum class VersionUpdateStrategy {
     STABLE,
     EA
 }
+
+
+var UIMode = false
 
 object WrapperMain {
     internal var uiBarOutput = StringBuilder()
@@ -178,10 +179,6 @@ object WrapperMain {
             launch {
                 ConsoleUpdater.versionCheck(type, strategy)
             }
-        }
-
-        runBlocking {
-            MiraiDownloader.downloadIfNeed(false)
         }
 
         println("Version check complete, starting Mirai")
