@@ -11,7 +11,7 @@ import org.gradle.kotlin.dsl.DependencyHandlerScope
 
 object Versions {
     object Mirai {
-        const val consoleWrapper = "1.2.0"
+        const val consoleWrapper = "1.3.0"
     }
 
     object Kotlin {
