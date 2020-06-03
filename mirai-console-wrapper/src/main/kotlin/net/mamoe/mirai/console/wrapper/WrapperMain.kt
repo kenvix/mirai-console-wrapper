@@ -81,6 +81,7 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
 
     override fun run() {
         proxyAvailabilityJob // start
+        CoreUpdater // start
 
         if (native) {
             UIMode = true
