@@ -1,3 +1,6 @@
+# (deprecated)
+此项目已停止维护，请使用 https://github.com/LXY1226/MiraiOK
+
 # mirai-console-wrapper
 [mirai-console](https://github.com/mamoe/mirai-console) 启动器.
 
