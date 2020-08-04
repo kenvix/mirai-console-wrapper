@@ -72,9 +72,28 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
             envvar = "mirai.wrapper.console"
     ).enum<ConsoleType>().default(ConsoleType.Pure)
 
+    val proxy: String by option(
+            help = """
+                HTTP 代理地址. 不提供时自动从 http://127.0.0.1:1080 和 http://127.0.0.1:1088 检测 SS 代理.
+            """.trimIndent(),
+            envvar = "mirai.wrapper.proxy"
+    ).default("DEFAULT")
+
+    val source: String by option(
+            help = """
+                版本更新源. 需要支持 miria-core-qqandroid 和 mirai-console 后端和前端等相关 jar 包的下载. 
+                URL 中 {module} 将会被替换为模块名, 如 mirai-core;
+                {version} 将会被替换为版本号, 如 1.0-RC2.
+            """.trimIndent(),
+            envvar = "mirai.wrapper.source"
+    ).default("DEFAULT")
+
     override fun run() {
+        proxyAvailabilityJob // start
+        CoreUpdater // start
 
         if (native) {
+            UIMode = true
             val f = JFrame("Mirai-Console Version Check")
             f.setSize(500, 200)
             f.setLocationRelativeTo(null)
@@ -112,9 +131,6 @@ object WrapperCli : CliktCommand(name = "mirai-warpper") {
             }
             WrapperMain.uiLog("版本检查完成, 启动中\n")
 
-            runBlocking {
-                MiraiDownloader.downloadIfNeed(true)
-            }
             GlobalScope.launch {
                 delay(3000)
                 uiOpen = false
@@ -140,6 +156,9 @@ enum class VersionUpdateStrategy {
     STABLE,
     EA
 }
+
+
+var UIMode = false
 
 object WrapperMain {
     internal var uiBarOutput = StringBuilder()
@@ -178,10 +197,6 @@ object WrapperMain {
             launch {
                 ConsoleUpdater.versionCheck(type, strategy)
             }
-        }
-
-        runBlocking {
-            MiraiDownloader.downloadIfNeed(false)
         }
 
         println("Version check complete, starting Mirai")

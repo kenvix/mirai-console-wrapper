@@ -31,7 +31,7 @@ dependencies {
     api(kotlinx("coroutines-swing", Versions.Kotlin.coroutines))
 
     api(ktor("client-cio", Versions.Kotlin.ktor))
-    api(ktor("client-core", Versions.Kotlin.ktor))
+    api(ktor("client-core-jvm", Versions.Kotlin.ktor))
     api(ktor("network", Versions.Kotlin.ktor))
 
     api("com.github.ajalt:clikt:2.6.0")

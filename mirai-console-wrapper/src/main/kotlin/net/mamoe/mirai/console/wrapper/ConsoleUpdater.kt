@@ -87,8 +87,8 @@ internal object ConsoleUpdater {
             "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/${getProjectName()}/${getProjectName()}-$newest.jar",getContent("${getProjectName()}-$newest.jar")
             )
              */
-            MiraiDownloader.addTask(
-                    "https://pan.jasonczc.cn/?/mirai/${getProjectName()}/${getProjectName()}-$newest.mp4",
+            MiraiDownloader.download(
+                    getFilePaths(getProjectName(), newest),
                     getContent("${getProjectName()}-$newest.jar")
             )
         }

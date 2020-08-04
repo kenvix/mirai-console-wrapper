@@ -8,102 +8,96 @@
  */
 package net.mamoe.mirai.console.wrapper
 
+import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.system.exitProcess
+
+class FilePath(delegate: List<Pair<String, String>>) : List<Pair<String, String>> by delegate
+
+suspend fun getFilePaths(module: String, version: String): FilePath {
+    return FilePath(listOfNotNull(
+            if (WrapperCli.source != "DEFAULT") {
+                "custom" to WrapperCli.source.replace("{module}", module).replace("{version}", version)
+            } else null,
+            if (isCuiCloudAvailable())
+                "崔云国内镜像" to "https://pan.jasonczc.cn/?/mirai/$module/$module-$version.mp4"
+            else null,
+            "GitHub mamoe.github.io" to "https://mamoe.github.io/mirai-repo/shadow/$module/$module-$version.jar",
+            "GitHub mirai-repo" to "https://raw.githubusercontent.com/mamoe/mirai-repo/master/shadow/$module/$module-$version.jar"
+    ))
+}
 
 internal object MiraiDownloader {
-    private val tasks = mutableMapOf<String, File>()
+    suspend fun download(from: FilePath, to: File) {
+        from.forEach {
+            println("${it.first}: ${it.second}")
+        }
 
-    fun addTask(
-            fromUrl: String,
-            to: File
-    ) {
-        tasks[fromUrl] = to
-    }
-
-    suspend fun downloadIfNeed(isUI: Boolean) {
-        if (tasks.isNotEmpty()) {
-            if (!isUI) {
-                MiraiDownloaderImpl(EmptyCoroutineContext, tasks, false, MiraiDownloaderProgressBarInTerminal()).waitUntilFinish()
-            } else {
-                MiraiDownloaderImpl(EmptyCoroutineContext, tasks, false, MiraiDownloaderProgressBarInUI()).waitUntilFinish()
-            }
+        for (s in from) {
+            kotlin.runCatching {
+                if (!UIMode) {
+                    download(DownloadTask(s.first, s.second, to), MiraiDownloaderProgressBarInTerminal())
+                } else {
+                    download(DownloadTask(s.first, s.second, to), MiraiDownloaderProgressBarInUI())
+                }
+            }.fold(
+                    onSuccess = {
+                        return
+                    },
+                    onFailure = {
+                        println()
+                        println("无法从 ${s.first} 下载. 正在更换下一个源")
+                    }
+            )
         }
     }
 }
 
-//background => any print
-private class MiraiDownloaderImpl(
-        override val coroutineContext: CoroutineContext = EmptyCoroutineContext,
-        tasks: Map<String, File>,
-        val background: Boolean,
-        val bar: MiraiDownloadProgressBar
-) : CoroutineScope {
+class DownloadTask(
+        val provider: String,
+        val fromUrl: String,
+        val toFile: File
+)
 
-    fun log(any: Any?) {
-        if (!background && any != null) {
-            println(background)
-        }
-    }
+@OptIn(KtorExperimentalAPI::class)
+suspend fun download(
+        task: DownloadTask,
+        bar: MiraiDownloadProgressBar
+) = coroutineScope {
+    val totalDownload = AtomicInteger(0)
+    val totalSize = AtomicInteger(0)
 
-    var totalDownload = AtomicInteger(0)
-    var totalSize = AtomicInteger(0)
+    bar.ad(task.provider)
 
-    private var isDownloadFinish: Job
-
-    init {
-        bar.ad()
-        isDownloadFinish = this.async {
-            tasks.forEach {
-                this.launch {
-                    downloadTask(it.key, it.value)
-                }
-            }
-        }
-    }
-
-    suspend fun waitUntilFinish() {
-        while (!isDownloadFinish.isCompleted) {
+    val progressJob = launch {
+        while (true) {
             bar.update(totalDownload.get().toFloat() / totalSize.get(), (totalSize.get() / (1024 * 1024)).toString() + "MB")
-            delay(50)
-        }
-        bar.update(1F, "Complete")
-        bar.complete()
-    }
-
-
-    @Throws(Exception::class)
-    private suspend fun downloadTask(fromUrl: String, file: File) {
-        withContext(Dispatchers.IO) {
-            try {
-                val con = URL(fromUrl).openConnection() as HttpURLConnection
-                val input = con.inputStream
-                totalSize.addAndGet(con.contentLength)
-                val outputStream = FileOutputStream(file)
-                var len: Int
-                val buff = ByteArray(1024)
-                while (input.read(buff).also { len = it } != -1) {
-                    totalDownload.addAndGet(buff.size)
-                    outputStream.write(buff, 0, len)
-                }
-            } catch (e: Exception) {
-                bar.update(1F, "Failed")
-                bar.complete()
-                println("Failed to download resources from " + fromUrl + " reason " + e.message)
-                e.printStackTrace()
-                println("Failed to download resources from " + fromUrl + " reason " + e.message)
-                println("Please Seek For Help")
-                exitProcess(1)
-            }
+            delay(1000 / 60) // 60 fps
         }
     }
+
+    withContext(Dispatchers.IO) {
+        val con = if (Http.engineConfig.proxy != null) URL(task.fromUrl).openConnection(Http.engineConfig.proxy) else URL(task.fromUrl).openConnection()
+        con as HttpURLConnection
+        val input = con.inputStream
+        totalSize.addAndGet(con.contentLength)
+        val outputStream = FileOutputStream(task.toFile)
+        var len: Int
+        val buff = ByteArray(1024)
+        while (input.read(buff).also { len = it } != -1) {
+            totalDownload.addAndGet(buff.size)
+            outputStream.write(buff, 0, len)
+        }
+    }
+
+    progressJob.cancel()
+
+    bar.update(1F, "Complete")
+    bar.complete()
 }
 
 
@@ -111,7 +105,7 @@ interface MiraiDownloadProgressBar {
     fun reset()
     fun update(rate: Float, message: String)
     fun complete()
-    fun ad()
+    fun ad(message: String)
 }
 
 class MiraiDownloaderProgressBarInTerminal : MiraiDownloadProgressBar {
@@ -120,9 +114,9 @@ class MiraiDownloaderProgressBarInTerminal : MiraiDownloadProgressBar {
         print('\r')
     }
 
-    override fun ad() {
-        println("Mirai Downloader")
-        println("[Mirai国内镜像] 感谢崔Cloud慷慨提供免费的国内储存分发")
+    override fun ad(message: String) {
+        println()
+        println(message)
     }
 
     private val barLen = 40
@@ -151,8 +145,8 @@ class MiraiDownloaderProgressBarInUI : MiraiDownloadProgressBar {
         WrapperMain.uiBarOutput.clear()
     }
 
-    override fun ad() {
-        WrapperMain.uiLog("[Mirai国内镜像] 感谢崔Cloud慷慨提供更新服务器")
+    override fun ad(message: String) {
+        WrapperMain.uiLog(message)
     }
 
     private val barLen = 20

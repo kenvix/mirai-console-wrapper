@@ -11,17 +11,82 @@
 package net.mamoe.mirai.console.wrapper
 
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.ProxyConfig
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.http
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.jvm.javaio.copyTo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.io.File
 import kotlin.system.exitProcess
 
-internal val Http: HttpClient = HttpClient(CIO)
+internal val proxyAvailabilityJob: Deferred<ProxyConfig?> = GlobalScope.async {
+    kotlin.run {
+        val url = WrapperCli.proxy
+        if (url != "DEFAULT") {
+            ProxyBuilder.http(url).also {
+                println("Testing proxy $it...")
+                require(it.testProxy()) {
+                    "Proxy $url is invalid."
+                }
+                println("Proxy is valid.")
+            }
+        } else {
+            null
+            /*
+            lateinit var threads: List<Thread>
+            withTimeoutOrNull(5_000) {
+                suspendCancellableCoroutine<ProxyConfig?> { cont ->
+                    threads = listOf("http://127.0.0.1:1080", "http://127.0.0.1:1088").map {
+                        thread(isDaemon = true) {
+                            runBlocking {
+                                val proxy = ProxyBuilder.http(it)
+                                if (proxy.testProxy())
+                                    cont.resume(proxy)
+                            }
+                        }
+                    }
+                    threads = threads + listOf("127.0.0.1" to 1080, "127.0.0.1" to 1088).map {
+                        thread(isDaemon = true) {
+                            runBlocking {
+                                val proxy = ProxyBuilder.socks(it.first, it.second)
+                                if (proxy.testProxy())
+                                    cont.resume(proxy)
+                            }
+                        }
+                    }
+                }
+            }.also { threads.forEach(Thread::interrupt) }
+            */
+        }
+    }.also { println("Using proxy: ${it?.address()}") }
+}
+
+suspend fun ProxyConfig.testProxy(): Boolean = kotlin.runCatching {
+    HttpClient(CIO) {
+        engine {
+            proxy = this@testProxy
+        }
+    }.use {
+        it.get<HttpStatusCode>("https://www.baidu.com").isSuccess()
+    }
+}.getOrElse { false }
+
+/**
+ * 自动检测 127.0.0.1:1080 和 127.0.0.1:1088 (SS 默认)
+ */
+internal suspend fun availableProxy(): ProxyConfig? = proxyAvailabilityJob.await()
+
+internal val Http: HttpClient = HttpClient(CIO) {
+    engine {
+        proxy = runBlocking { availableProxy() }
+    }
+}
 
 internal inline fun <R> tryNTimesOrQuit(repeat: Int, errorHint: String, block: (Int) -> R) {
     var lastException: Throwable? = null
